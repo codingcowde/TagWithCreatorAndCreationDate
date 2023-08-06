@@ -1,10 +1,17 @@
+# Input parameters to the script: Event Grid Event data and trigger metadata.
 param($eventGridEvent, $TriggerMetadata)
 
-# Instead of $caller = $eventGridEvent.data.claims.name we will use the UPN
+# Retrieve the caller's User Principal Name (UPN) from event data claims.
 $caller = $eventGridEvent.data.claims."http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn"
+
+# If caller's UPN is not found and the principal type is a Service Principal,
+# then get the display name of the Service Principal as the caller.
 if ($null -eq $caller) {
     if ($eventGridEvent.data.authorization.evidence.principalType -eq "ServicePrincipal") {
         $caller = (Get-AzADServicePrincipal -ObjectId $eventGridEvent.data.authorization.evidence.principalId).DisplayName
+        
+        # If display name of the Service Principal is not found,
+        # use the principal Id as the caller.
         if ($null -eq $caller) {
             Write-Host "MSI may not have permission to read the applications from the directory"
             $caller = $eventGridEvent.data.authorization.evidence.principalId
@@ -12,59 +19,70 @@ if ($null -eq $caller) {
     }
 }
 
+# Log the caller.
 Write-Host "Caller: $caller"
+
+# Get the Resource Id from the event data.
 $resourceId = $eventGridEvent.data.resourceUri
+
+# Log the Resource Id.
 Write-Host "ResourceId: $resourceId"
 
+# If either the caller or the Resource Id is null, log the issue and exit.
 if (($null -eq $caller) -or ($null -eq $resourceId)) {
     Write-Host "ResourceId or Caller is null"
     exit;
 }
 
+# Define a list of resource types to be ignored for tagging.
 $ignore = @(
     "providers/Microsoft.Resources/deployments",
     "providers/Microsoft.Resources/tags",
     "providers/Microsoft.Network/frontdoor"
 )
 
+# If the Resource Id matches any in the ignore list, skip tagging and exit.
 foreach ($case in $ignore) {
     if ($resourceId -match $case) {
         Write-Host "Skipping event as resourceId ignorelist contains: $case"
         exit;
     }
 }
-#Write-Host "Try add Creator tag with user: $caller"
 
+# Define a hashtable for new tags: Creator and CreatedAt.
 $newTag = @{
     Creator = $caller
+    CreatedAt = $eventGridEvent.data.eventTime  # This is assumed to be the creation time.
 }
 
+# Get existing tags of the resource.
 $tags = (Get-AzTag -ResourceId $resourceId)
 
-# Check if tags are not supported
+# If tags are not supported for the resource, log the issue and return.
 if (-not $tags) {
     Write-Host "$resourceId does not support tags"
     return
 }
 
-# Check if properties are null
+# If tag properties are null, log the issue and return.
 if (-not $tags.properties) {
     Write-Host "WARNING! $resourceId does not support tags? (`$tags.properties is null)"
     return
 }
 
-# Check if TagsProperty is null
+# If tag properties are null, create new tags and return.
 if (-not $tags.properties.TagsProperty) {
-    Write-Host "Added Creator tag with user: $caller"
+    Write-Host "Added Creator and CreatedAt tags with user: $caller"
     New-AzTag -ResourceId $resourceId -Tag $newTag | Out-Null
     return
 }
 
-# Check if Creator tag already exists
+# If Creator tag already exists, log it.
 if ($tags.properties.TagsProperty.ContainsKey('Creator')) {
     Write-Host "Creator tag already exists"
 }
+# If Creator tag does not exist, add new tags and log the operation.
 else {
     Update-AzTag -ResourceId $resourceId -Operation Merge -Tag $newTag | Out-Null
-    Write-Host "Added Creator tag with user: $caller"
+    Write-Host "Added Creator and CreatedAt tags with user: $caller"
 }
