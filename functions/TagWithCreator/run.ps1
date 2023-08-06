@@ -1,8 +1,13 @@
 # Input parameters to the script: Event Grid Event data and trigger metadata.
 param($eventGridEvent, $TriggerMetadata)
 
-# Retrieve the caller's User Principal Name (UPN) from event data claims.
+# Retrieve the caller's User Principal Name (UPN) from event data claims. 
 $caller = $eventGridEvent.data.claims."http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn"
+
+# If you are fine with just the name change the above line to:
+# $caller = $eventGridEvent.data.claims.name
+# This also works if no AD is present or the app has no rights to access it.
+
 
 # If caller's UPN is not found and the principal type is a Service Principal,
 # then get the display name of the Service Principal as the caller.
@@ -49,10 +54,17 @@ foreach ($case in $ignore) {
     }
 }
 
+# Get the creation date from the event or set now as creation date
+$creationTime = $eventGridEvent.data.eventTime
+if ($null -eq $creationTime) {
+    $creationTime = Get-Date -Format s # get current time in ISO 8601 format
+}
+
+
 # Define a hashtable for new tags: Creator and CreatedAt.
 $newTag = @{
     Creator = $caller
-    CreatedAt = $eventGridEvent.data.eventTime  # This is assumed to be the creation time.
+    CreatedAt = $creationTime # This is assumed to be the creation time.
 }
 
 # Get existing tags of the resource.
