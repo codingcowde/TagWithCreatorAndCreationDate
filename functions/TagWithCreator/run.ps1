@@ -41,28 +41,30 @@ $newTag = @{
 
 $tags = (Get-AzTag -ResourceId $resourceId)
 
-if ($tags) {
-    # Tags supported?
-    if ($tags.properties) {
-        # if null no tags?
-        if ($tags.properties.TagsProperty) {
-            if (!($tags.properties.TagsProperty.ContainsKey('Creator')) ) {
-                Update-AzTag -ResourceId $resourceId -Operation Merge -Tag $newTag | Out-Null
-                Write-Host "Added Creator tag with user: $caller"
-            }
-            else {
-                Write-Host "Creator tag already exists"
-            }
-        }
-        else {
-            Write-Host "Added Creator tag with user: $caller"
-            New-AzTag -ResourceId $resourceId -Tag $newTag | Out-Null
-        }
-    }
-    else {
-        Write-Host "WARNNG! Does $resourceId does not support tags? (`$tags.properties is null)"
-    }
+# Check if tags are not supported
+if (-not $tags) {
+    Write-Host "$resourceId does not support tags"
+    return
+}
+
+# Check if properties are null
+if (-not $tags.properties) {
+    Write-Host "WARNING! $resourceId does not support tags? (`$tags.properties is null)"
+    return
+}
+
+# Check if TagsProperty is null
+if (-not $tags.properties.TagsProperty) {
+    Write-Host "Added Creator tag with user: $caller"
+    New-AzTag -ResourceId $resourceId -Tag $newTag | Out-Null
+    return
+}
+
+# Check if Creator tag already exists
+if ($tags.properties.TagsProperty.ContainsKey('Creator')) {
+    Write-Host "Creator tag already exists"
 }
 else {
-    Write-Host "$resourceId does not support tags"
+    Update-AzTag -ResourceId $resourceId -Operation Merge -Tag $newTag | Out-Null
+    Write-Host "Added Creator tag with user: $caller"
 }
