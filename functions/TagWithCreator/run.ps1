@@ -1,6 +1,6 @@
 param($eventGridEvent, $TriggerMetadata)
 
-#$caller = $eventGridEvent.data.claims.name
+# Instead of $caller = $eventGridEvent.data.claims.name we will use the UPN
 $caller = $eventGridEvent.data.claims."http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn"
 if ($null -eq $caller) {
     if ($eventGridEvent.data.authorization.evidence.principalType -eq "ServicePrincipal") {
