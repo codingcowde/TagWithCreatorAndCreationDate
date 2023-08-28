@@ -7,8 +7,6 @@ param($eventGridEvent, $TriggerMetadata)
 # At this point, we know it's a 'Created' event. Do your work here.
 
 # Send a response back to acknowledge receipt of the event
-Out-PutHttpResponse -StatusCode OK -ReasonPhrase "OK"
-With this modification, the function will terminate early if the eventType is not 'Microsoft.Resources.ResourceWriteSuccess' or if the status is not 'Created', sending back an HTTP response that describes why it's not proceeding further.
 
 Remember to replace the Out-PutHttpResponse function with the correct function
 
