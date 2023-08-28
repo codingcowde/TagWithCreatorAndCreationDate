@@ -2,17 +2,16 @@
 param($eventGridEvent, $TriggerMetadata)
 
 
-# Examine the status
-$status = $eventGridEvent.data.status
-
 # Guard clause: if this is not a 'Created' status, exit
-if ($status -ne 'Created') {
-    Write-Host "Event has status other than Created"
+$eventType = $eventGridEvent.eventType
+Write-Host "AutoTag was called. The event Type is:"
+$eventType | Write-Host
+if ($eventType.ToLower() -cnotlike "*create*"){
+    Write-Host "Not triggered by creation. Exit"
     exit;
 }
 
 # At this point, we know it's a 'Created' event. Do your work here.
-# ...
 
 # Send a response back to acknowledge receipt of the event
 Out-PutHttpResponse -StatusCode OK -ReasonPhrase "OK"
