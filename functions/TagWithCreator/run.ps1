@@ -2,14 +2,7 @@
 param($eventGridEvent, $TriggerMetadata)
 
 
-# Guard clause: if $eventType is does not contain 'created', exit
-$eventType = $eventGridEvent.eventType
-Write-Host "AutoTag was called. The event Type is:"
-$eventType | Write-Host
-if ($eventType.ToLower() -cnotlike "*create*"){
-    Write-Host "Not triggered by creation. Exit"
-    exit;
-}
+
 
 # At this point, we know it's a 'Created' event. Do your work here.
 
