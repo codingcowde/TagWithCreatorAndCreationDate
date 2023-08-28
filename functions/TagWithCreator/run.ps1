@@ -2,7 +2,7 @@
 param($eventGridEvent, $TriggerMetadata)
 
 
-# Guard clause: if this is not a 'Created' status, exit
+# Guard clause: if $eventType is does not contain 'created', exit
 $eventType = $eventGridEvent.eventType
 Write-Host "AutoTag was called. The event Type is:"
 $eventType | Write-Host
