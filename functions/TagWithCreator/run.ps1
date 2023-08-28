@@ -1,6 +1,28 @@
 # Input parameters to the script: Event Grid Event data and trigger metadata.
 param($eventGridEvent, $TriggerMetadata)
 
+
+# Examine the status
+$status = $eventGridEvent.data.status
+
+# Guard clause: if this is not a 'Created' status, exit
+if ($status -ne 'Created') {
+    Write-Host "Event has status other than Created"
+    exit;
+}
+
+# At this point, we know it's a 'Created' event. Do your work here.
+# ...
+
+# Send a response back to acknowledge receipt of the event
+Out-PutHttpResponse -StatusCode OK -ReasonPhrase "OK"
+With this modification, the function will terminate early if the eventType is not 'Microsoft.Resources.ResourceWriteSuccess' or if the status is not 'Created', sending back an HTTP response that describes why it's not proceeding further.
+
+Remember to replace the Out-PutHttpResponse function with the correct function
+
+
+
+
 # Retrieve the caller's User Principal Name (UPN) from event data claims. 
 $caller = $eventGridEvent.data.claims."http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn"
 
@@ -98,3 +120,5 @@ else {
     Update-AzTag -ResourceId $resourceId -Operation Merge -Tag $newTag | Out-Null
     Write-Host "Added Creator and CreatedAt tags with user: $caller"
 }
+
+Out-PutHttpResponse -StatusCode OK -ReasonPhrase "Created Tags"
