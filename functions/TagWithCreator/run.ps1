@@ -1,18 +1,6 @@
 # Input parameters to the script: Event Grid Event data and trigger metadata.
 param($eventGridEvent, $TriggerMetadata)
 
-
-
-
-# At this point, we know it's a 'Created' event. Do your work here.
-
-# Send a response back to acknowledge receipt of the event
-
-Remember to replace the Out-PutHttpResponse function with the correct function
-
-
-
-
 # Retrieve the caller's User Principal Name (UPN) from event data claims. 
 $caller = $eventGridEvent.data.claims."http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn"
 
