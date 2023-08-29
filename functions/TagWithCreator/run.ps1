@@ -1,3 +1,6 @@
+# ToDo: 
+#   double check the use of exit statements vs return in the context of function apps
+
 # Input parameters to the script: Event Grid Event data and trigger metadata.
 param($eventGridEvent, $TriggerMetadata)
 
