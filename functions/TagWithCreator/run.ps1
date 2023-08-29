@@ -67,6 +67,10 @@ $newTag = @{
     CreatedAt = $creationTime # This is assumed to be the creation time.
 }
 
+$updatedTag = @{
+    UpdatedBy = $caller
+    UpdatedAt = $creationTime
+}
 # Get existing tags of the resource.
 $tags = (Get-AzTag -ResourceId $resourceId)
 
@@ -75,18 +79,25 @@ $tags = (Get-AzTag -ResourceId $resourceId)
 # If tags are not supported for the resource, log the issue and return.
 if (-not $tags) {
     Write-Host "$resourceId does not support tags"
+    Out-PutHttpResponse -StatusCode OK -ReasonPhrase "Skipped creating Tags"
     exit;
 }
 
-# If Creator tag already exists, log it.
-if ($tags.properties.TagsProperty.ContainsKey('Creator')) {
-    Write-Host "Creator tag already exists"
-    exit;
-}
 
-# If tag properties are null, log the issue and return.
+
+# If tag properties are not supported, log the issue and return.
 if (-not $tags.properties) {
     Write-Host "WARNING! $resourceId does not support tags? (`$tags.properties is null)"
+    Out-PutHttpResponse -StatusCode OK -ReasonPhrase "Skipped creating Tags"
+    exit;
+}
+
+# If Creator tag already exists, add $updatedTag instead of $newTag.
+if ($tags.properties.TagsProperty.ContainsKey('Creator')) {
+    Write-Host "Creator tag already exists"
+    Update-AzTag -ResourceId $resourceId -Operation Merge -Tag $updatedTag | Out-Null
+    Write-Host "Added UpdatedBy and UpdatedAt tags with user: $caller"
+    Out-PutHttpResponse -StatusCode OK -ReasonPhrase "Created UpdatedBy Tags"
     exit;
 }
 
@@ -96,6 +107,7 @@ if (-not $tags.properties.TagsProperty) {
     New-AzTag -ResourceId $resourceId -Tag $newTag | Out-Null
     return
 }else {
+    # If tag properties are not null, merge the tags with $newTag hash table
     Update-AzTag -ResourceId $resourceId -Operation Merge -Tag $newTag | Out-Null
     Write-Host "Added Creator and CreatedAt tags with user: $caller"
     return
