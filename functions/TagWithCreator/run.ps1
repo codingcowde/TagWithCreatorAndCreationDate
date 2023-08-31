@@ -15,16 +15,7 @@ $caller = $eventGridEvent.data.claims."http://schemas.xmlsoap.org/ws/2005/05/ide
 # If caller's UPN is not found and the principal type is a Service Principal,
 # then get the display name of the Service Principal as the caller.
 if ($null -eq $caller) {
-    if ($eventGridEvent.data.authorization.evidence.principalType -eq "ServicePrincipal") {
-        $caller = (Get-AzADServicePrincipal -ObjectId $eventGridEvent.data.authorization.evidence.principalId).DisplayName
-        
-        # If display name of the Service Principal is not found,
-        # use the principal Id as the caller.
-        if ($null -eq $caller) {
-            Write-Host "MSI may not have permission to read the applications from the directory"
-            $caller = $eventGridEvent.data.authorization.evidence.principalId
-        }
-    }
+   exit;
 }
 
 # Log the caller.
